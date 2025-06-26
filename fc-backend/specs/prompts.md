@@ -35,3 +35,7 @@ Can you add zooming possibility? Zooming in should reduce the displayed radius b
 ## MCP
 
 Take a look at the last two commits. Create a timesheet booking in time cockpit (MCP) for the project "Alpha Tool" with a meaningful description based on the last commits.
+
+## Check UI
+
+This is a screenshot of a radar display. We need to figure out if the planes are displayed at the correct location. The center is the airport LNZ (48.238575/14.191473). You can find the lat/lng value near each plane. Please verify that the display is correct. You can use Haversine for distance calculation.
