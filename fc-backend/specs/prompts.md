@@ -1,10 +1,14 @@
 ## Initial Prompt
 
-Read #01-general.md carefully. Are the requirements clear? Do you need additional information before you generate the necessary data structures and algorithms?
+Read #general-spec.md carefully. Are the requirements clear? Do you need additional information before you generate the necessary data structures and algorithms?
 
 ## Trigger
 
 Yes, please generate the code. Note that I need the structures that represent Airplanes and Alerts to be serializable (Serde).
+
+## Double-Check (o3)
+
+Please double-check that all requirements in general-spec have been correctly implemented in planes.rs. You do not need to compile or run the code. I did that. It seems to work. All tests pass. I just want you to double-check if the requirements were correctly applied to the Rust code.
 
 ## Run Tests
 
