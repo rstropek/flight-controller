@@ -35,7 +35,10 @@ class RadarDisplay {
 
   // Radar configuration
   private readonly RADAR_RADIUS = 400; // pixels
-  private readonly MAX_DISTANCE_NM = 80; // nautical miles
+  private maxDistanceKm = 100; // Start with 100km zoom level
+  private readonly MIN_DISTANCE_KM = 20;
+  private readonly MAX_DISTANCE_KM = 100;
+  private readonly ZOOM_STEP_KM = 20;
   private readonly CENTER_LAT = 48.238575; // Linz Airport
   private readonly CENTER_LNG = 14.191473; // Linz Airport
 
@@ -47,19 +50,22 @@ class RadarDisplay {
   private initializeUI(): void {
     document.body.innerHTML = `
       <div class="container">
+        <div class="zoom-controls">
+          <button class="zoom-btn" id="zoom-in" title="Zoom In">+</button>
+          <button class="zoom-btn" id="zoom-out" title="Zoom Out">-</button>
+          <div class="zoom-level">${this.maxDistanceKm}km</div>
+        </div>
+        
         <div class="radar-container">
           <div class="radar-screen" id="radar-screen">
             <div class="radar-rings">
               <div class="radar-ring"></div>
               <div class="radar-ring"></div>
               <div class="radar-ring"></div>
+              <div class="radar-ring"></div>
             </div>
             <div class="radar-crosshairs"></div>
-            <div class="distance-labels">
-              <div class="distance-label">20km</div>
-              <div class="distance-label">40km</div>
-              <div class="distance-label">60km</div>
-              <div class="distance-label">80km</div>
+            <div class="distance-labels" id="distance-labels">
             </div>
           </div>
         </div>
@@ -68,7 +74,7 @@ class RadarDisplay {
           <h3>System Status</h3>
           <div class="status-item">Aircraft: <span id="aircraft-count">0</span></div>
           <div class="status-item">Alerts: <span id="alert-count">0</span></div>
-          <div class="status-item">Range: ${this.MAX_DISTANCE_NM}nm</div>
+          <div class="status-item">Range: <span id="range-display">${this.maxDistanceKm}km</span></div>
         </div>
         
         <div class="alerts-panel" id="alerts-panel" style="display: none;">
@@ -87,12 +93,110 @@ class RadarDisplay {
     this.statusPanel = document.getElementById('status-panel')!;
     this.alertsPanel = document.getElementById('alerts-panel')!;
 
+    // Initialize zoom controls
+    this.setupZoomControls();
+    this.updateRadarLabels();
+
     // Close popup when clicking outside
     document.addEventListener('click', (e) => {
       if (this.currentPopup && !this.currentPopup.contains(e.target as Node)) {
         this.closePopup();
       }
     });
+  }
+
+  private setupZoomControls(): void {
+    const zoomInBtn = document.getElementById('zoom-in')!;
+    const zoomOutBtn = document.getElementById('zoom-out')!;
+
+    zoomInBtn.addEventListener('click', () => this.zoomIn());
+    zoomOutBtn.addEventListener('click', () => this.zoomOut());
+
+    this.updateZoomButtons();
+  }
+
+  private zoomIn(): void {
+    if (this.maxDistanceKm > this.MIN_DISTANCE_KM) {
+      this.maxDistanceKm -= this.ZOOM_STEP_KM;
+      this.updateZoom();
+    }
+  }
+
+  private zoomOut(): void {
+    if (this.maxDistanceKm < this.MAX_DISTANCE_KM) {
+      this.maxDistanceKm += this.ZOOM_STEP_KM;
+      this.updateZoom();
+    }
+  }
+
+  private updateZoom(): void {
+    this.updateZoomButtons();
+    this.updateRadarLabels();
+    this.updateRangeDisplay();
+    // Redraw all aircraft with new zoom level
+    if (this.currentAircraft.length > 0) {
+      this.updateAircraft(this.currentAircraft, this.currentAlerts);
+    }
+  }
+
+  private updateZoomButtons(): void {
+    const zoomInBtn = document.getElementById('zoom-in')!;
+    const zoomOutBtn = document.getElementById('zoom-out')!;
+    const zoomLevel = document.querySelector('.zoom-level')!;
+
+    zoomInBtn.classList.toggle('disabled', this.maxDistanceKm <= this.MIN_DISTANCE_KM);
+    zoomOutBtn.classList.toggle('disabled', this.maxDistanceKm >= this.MAX_DISTANCE_KM);
+    zoomLevel.textContent = `${this.maxDistanceKm}km`;
+  }
+
+  private updateRadarLabels(): void {
+    const labelsContainer = document.getElementById('distance-labels')!;
+    labelsContainer.innerHTML = '';
+
+    // Create distance labels for each ring (4 rings total)
+    for (let ringIndex = 1; ringIndex <= 4; ringIndex++) {
+      const distance = (this.maxDistanceKm / 4) * ringIndex;
+      
+      // Skip labels for innermost ring to avoid center clutter
+      if (ringIndex === 1) continue;
+      
+      // Add labels at multiple positions around each ring for better visibility
+      const positions = [
+        { bottom: 100 - (25 * ringIndex), left: 50, label: `${distance}km from center` }, // Top
+        { bottom: 50, left: 100 - (25 * ringIndex), label: `${distance}km` }, // Right
+        { bottom: 25 * ringIndex, left: 50, label: `${distance}km` }, // Bottom
+        { bottom: 50, left: 25 * ringIndex, label: `${distance}km` } // Left
+      ];
+
+      positions.forEach((pos, posIndex) => {
+        const label = document.createElement('div');
+        label.className = 'distance-label';
+        
+        // Use more descriptive text for the top label of each ring
+        label.textContent = pos.label;
+        
+        // Position the label
+        label.style.bottom = `${pos.bottom}%`;
+        label.style.left = `${pos.left}%`;
+        label.style.transform = 'translate(-50%, -50%)';
+        
+        // Add ring identifier for styling
+        label.setAttribute('data-ring', ringIndex.toString());
+        label.setAttribute('data-position', posIndex.toString());
+        
+        labelsContainer.appendChild(label);
+      });
+    }
+  }
+
+  private updateRangeDisplay(): void {
+    const rangeDisplay = document.getElementById('range-display')!;
+    rangeDisplay.textContent = `${this.maxDistanceKm}km`;
+  }
+
+  private get maxDistanceNm(): number {
+    // Convert km to nautical miles (1 km ≈ 0.539957 nm)
+    return this.maxDistanceKm * 0.539957;
   }
 
   private connectToBackend(): void {
@@ -158,16 +262,27 @@ class RadarDisplay {
       alertCallsigns.add(alert.plane2_callsign);
     });
 
-    // Remove aircraft that are no longer present
+    // Remove aircraft that are no longer present OR outside current radar range
     const currentCallsigns = new Set(aircraft.map(a => a.callsign));
+    const visibleCallsigns = new Set<string>();
+    
+    // First, determine which aircraft should be visible in current zoom level
+    aircraft.forEach(plane => {
+      const position = this.convertToRadarPosition(plane.latitude, plane.longitude);
+      if (position) {
+        visibleCallsigns.add(plane.callsign);
+      }
+    });
+    
+    // Remove aircraft elements that are no longer present OR no longer visible
     this.aircraftElements.forEach((element, callsign) => {
-      if (!currentCallsigns.has(callsign)) {
+      if (!currentCallsigns.has(callsign) || !visibleCallsigns.has(callsign)) {
         element.remove();
         this.aircraftElements.delete(callsign);
       }
     });
 
-    // Update or create aircraft elements
+    // Update or create aircraft elements for visible aircraft only
     aircraft.forEach(plane => {
       const position = this.convertToRadarPosition(plane.latitude, plane.longitude);
       if (position) {
@@ -212,7 +327,7 @@ class RadarDisplay {
     const distance = this.calculateDistance(this.CENTER_LAT, this.CENTER_LNG, lat, lng);
     
     // Check if aircraft is within radar range
-    if (distance > this.MAX_DISTANCE_NM) {
+    if (distance > this.maxDistanceNm) {
       return null;
     }
     
@@ -220,7 +335,7 @@ class RadarDisplay {
     const bearing = this.calculateBearing(this.CENTER_LAT, this.CENTER_LNG, lat, lng);
     
     // Convert to radar screen coordinates
-    const radarDistance = (distance / this.MAX_DISTANCE_NM) * this.RADAR_RADIUS;
+    const radarDistance = (distance / this.maxDistanceNm) * this.RADAR_RADIUS;
     const x = this.RADAR_RADIUS + radarDistance * Math.sin(bearing);
     const y = this.RADAR_RADIUS - radarDistance * Math.cos(bearing);
     
