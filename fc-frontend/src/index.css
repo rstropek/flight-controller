@@ -1,0 +1,295 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #000;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.radar-container {
+  position: relative;
+  width: 800px;
+  height: 800px;
+}
+
+.radar-screen {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #00ff00;
+  border-radius: 50%;
+  position: relative;
+  background-color: #001100;
+  background-image: radial-gradient(circle at center, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.radar-rings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.radar-ring {
+  position: absolute;
+  border: 1px dashed #00ff00;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.radar-ring:nth-child(1) {
+  width: 25%;
+  height: 25%;
+  top: 37.5%;
+  left: 37.5%;
+}
+
+.radar-ring:nth-child(2) {
+  width: 50%;
+  height: 50%;
+  top: 25%;
+  left: 25%;
+}
+
+.radar-ring:nth-child(3) {
+  width: 75%;
+  height: 75%;
+  top: 12.5%;
+  left: 12.5%;
+}
+
+.radar-crosshairs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.radar-crosshairs::before,
+.radar-crosshairs::after {
+  content: '';
+  position: absolute;
+  background-color: #00ff00;
+  opacity: 0.5;
+}
+
+.radar-crosshairs::before {
+  width: 100%;
+  height: 1px;
+  top: 50%;
+  left: 0;
+}
+
+.radar-crosshairs::after {
+  width: 1px;
+  height: 100%;
+  top: 0;
+  left: 50%;
+}
+
+.distance-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.distance-label {
+  position: absolute;
+  color: #00ff00;
+  font-size: 10px;
+  transform: translate(-50%, -50%);
+}
+
+.distance-label:nth-child(1) {
+  bottom: 37.5%;
+  left: 50%;
+}
+
+.distance-label:nth-child(2) {
+  bottom: 25%;
+  left: 50%;
+}
+
+.distance-label:nth-child(3) {
+  bottom: 12.5%;
+  left: 50%;
+}
+
+.distance-label:nth-child(4) {
+  bottom: 0%;
+  left: 50%;
+}
+
+.aircraft {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #00ff00;
+  border-radius: 50%;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  box-shadow: 0 0 6px #00ff00;
+}
+
+.aircraft.alert {
+  background-color: #ff0000;
+  box-shadow: 0 0 8px #ff0000, 0 0 16px #ff0000;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.aircraft-label {
+  position: absolute;
+  top: -20px;
+  left: 10px;
+  color: #00ff00;
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.aircraft.alert .aircraft-label {
+  color: #ff0000;
+}
+
+.aircraft-info-popup {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ffff00;
+  padding: 10px;
+  color: #ffff00;
+  font-size: 12px;
+  z-index: 100;
+  min-width: 200px;
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+}
+
+.aircraft-info-popup h3 {
+  color: #ffff00;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #ffff00;
+  padding-bottom: 3px;
+}
+
+.aircraft-info-popup .close-btn {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #ff0000;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.aircraft-info-popup .close-btn:hover {
+  color: #ffffff;
+}
+
+.alerts-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 1px solid #ff0000;
+  padding: 10px;
+  max-width: 300px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.alerts-panel h3 {
+  color: #ff0000;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.alert-item {
+  color: #ff0000;
+  margin-bottom: 5px;
+  font-size: 11px;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.status-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 1px solid #00ff00;
+  padding: 10px;
+  min-width: 200px;
+}
+
+.status-panel h3 {
+  color: #00ff00;
+  margin-bottom: 10px;
+}
+
+.status-item {
+  color: #00ff00;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.connection-status {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  padding: 5px 10px;
+  border: 1px solid;
+  font-size: 11px;
+}
+
+.connection-status.connected {
+  color: #00ff00;
+  border-color: #00ff00;
+  background-color: rgba(0, 255, 0, 0.1);
+}
+
+.connection-status.disconnected {
+  color: #ff0000;
+  border-color: #ff0000;
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.connection-status.connecting {
+  color: #ffff00;
+  border-color: #ffff00;
+  background-color: rgba(255, 255, 0, 0.1);
+}
